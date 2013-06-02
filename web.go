@@ -19,7 +19,11 @@ const (
 `
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
+type blinkMHandler struct {
+	blinkM chan<- uint32
+}
+
+func (handler *blinkMHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	rs := r.FormValue("r")
 	gs := r.FormValue("g")
 	bs := r.FormValue("b")
@@ -39,14 +43,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setColor(color)
-	fmt.Fprintf(w, "Set 0x%x", color)
+	fmt.Fprintf(w, "1")
+	handler.blinkM <- color
 	return
 }
 
-func Run() {
+func Run(colorBlinkM chan<- uint32) {
+	handler := &blinkMHandler{blinkM: colorBlinkM}
 	fmt.Printf("Planning to run a server\n")
-	http.HandleFunc("/", handler)
+	http.Handle("/", handler)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		fmt.Printf("Couldn't serve: %s\n", err.Error())
