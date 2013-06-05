@@ -50,9 +50,9 @@ func (handler *blinkMHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 func Run(colorBlinkM chan<- uint32) {
 	handler := &blinkMHandler{blinkM: colorBlinkM}
-	fmt.Printf("Planning to run a server\n")
+	fmt.Printf("Starting service at %s\n", config.servicePort)
 	http.Handle("/", handler)
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(config.servicePort, nil)
 	if err != nil {
 		fmt.Printf("Couldn't serve: %s\n", err.Error())
 	}
