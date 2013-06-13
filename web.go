@@ -48,11 +48,11 @@ func (handler *blinkMHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	return
 }
 
-func Run(colorBlinkM chan<- uint32) {
+func Run(servicePort string, colorBlinkM chan<- uint32) {
 	handler := &blinkMHandler{blinkM: colorBlinkM}
-	fmt.Printf("Starting service at %s\n", config.servicePort)
+	fmt.Printf("Starting service at %s\n", servicePort)
 	http.Handle("/", handler)
-	err := http.ListenAndServe(config.servicePort, nil)
+	err := http.ListenAndServe(servicePort, nil)
 	if err != nil {
 		fmt.Printf("Couldn't serve: %s\n", err.Error())
 	}

@@ -1,0 +1,28 @@
+{
+    "ServicePort": ":8080",
+    "Device": {
+	"Device": "1",
+	"DeviceAddress": "0x09"
+    },
+    "RedQuery": {
+	"Name": "Some Query for the Red Channel"
+	"Event": "SOME EVENT",
+	"Token": "YOUR PROJECT TOKEN",
+	"Secret":"YOUR PROJECT SECRET"
+	"Where": "A Filter, or the empty string for no filter."
+    },
+    "GreenQuery": {
+	"Name": "Some Query for the Green Channel"
+	"Event": "SOME EVENT",
+	"Token": "YOUR PROJECT TOKEN",
+	"Secret":"YOUR PROJECT SECRET"
+	"Where": "A Filter, or the empty string for no filter."
+    },
+    "BlueQuery": {
+	"Name": "Some Query for the Blue Channel"
+	"Event": "SOME EVENT",
+	"Token": "YOUR PROJECT TOKEN",
+	"Secret":"YOUR PROJECT SECRET"
+	"Where": "A Filter, or the empty string for no filter."
+    }
+}
