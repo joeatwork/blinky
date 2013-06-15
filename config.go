@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
+	"time"
 )
 
 type Query struct {
@@ -20,6 +21,7 @@ type Device struct {
 
 type Configuration struct {
 	ServicePort string `json:"ServicePort"`
+	PollingRateSeconds time.Duration `json:"PollingRateSeconds"`
 	Device Device `json:"Device"`
 	RedQuery Query `json:RedQuery`
 	GreenQuery Query `json:RedQuery`

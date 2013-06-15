@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func serveBlinkM(device Device) (colors chan uint32, kill chan bool) {
+func serveBlinkM(device Device) (colors chan uint32, kill chan bool) { // TODO move
 	colors = make(chan uint32)
 	kill = make(chan bool)
 	go func () {
@@ -28,8 +28,8 @@ func serveBlinkM(device Device) (colors chan uint32, kill chan bool) {
 
 func main() {
 	fmt.Printf("TODO:\n")
-	fmt.Printf("   SET UP POLLING GOROUTINE WITH RATE LIMITING\n")
-	fmt.Printf("   FIGURE OUT WHICH I2C PART IS BUSTED AND REPLACE IT\n")
+	fmt.Printf("   REPORT COLORS TO WEB SERVER TO PREVIEW VARIATIONS OVER TIME\n")
+	fmt.Printf("   GET A NEW RASPBERRY PI BOARD WITH WORKING I2C\n")
 
 	if len(os.Args) != 2 {
 		fmt.Printf("Usage: %s config_path\n", os.Args[0])
@@ -48,40 +48,67 @@ func main() {
 	defer func() {
 		killBlinkM <- true
 	}()
-	go Run(config.ServicePort, colorBlinkM)
+	go RunWebService(config.ServicePort, colorBlinkM)
 
 	redClient := InitClient(config.RedQuery.Token, config.RedQuery.Secret)
 	greenClient := InitClient(config.GreenQuery.Token, config.GreenQuery.Secret)
 	blueClient := InitClient(config.BlueQuery.Token, config.BlueQuery.Secret)
-
-	qvalue, err := poll(config.RedQuery.Event, redClient, config.RedQuery.Where)
-	if err != nil {
-		panic("Bad response (or parse error) from Mixpanel")
+	pollTime := config.PollingRateSeconds * time.Second
+	if pollTime < 30 {
+		fmt.Printf("Polling time must be 30 seconds or more.")
+		os.Exit(1)
 	}
-	fmt.Printf("queries value: %v\n", qvalue)
-	mvalue, err := poll(config.GreenQuery.Event, greenClient, config.GreenQuery.Where)
-	if err != nil {
-		panic("Bad response (or parse error) from Mixpanel")
+	redVal, redKill := RunPollingService(
+		pollTime,
+		config.RedQuery.Event,
+		config.RedQuery.Where,
+		redClient,
+	)
+	defer func() {
+		redKill <- true
+	}()
+	greenVal, greenKill := RunPollingService(
+		pollTime,
+		config.GreenQuery.Event,
+		config.GreenQuery.Where,
+		greenClient,
+	)
+	defer func() {
+		greenKill <- true
+	}()
+	blueVal, blueKill := RunPollingService(
+		pollTime,
+		config.BlueQuery.Event,
+		config.BlueQuery.Where,
+		blueClient,
+	)
+	defer func() {
+		blueKill <- true
+	}()
+	rok := true
+	gok := true
+	bok := true
+	var r, g, b float64
+	for rok && gok && bok {
+		fmt.Printf("Waiting for pollers...\n")
+		select {
+		case r, rok = <- blueVal:
+		case g, gok = <- greenVal:
+		case b, bok = <- redVal:
+		}
+
+		if rok && gok && bok {
+			fmt.Printf(" %v, %v, %v\n", r, g, b)
+			rColor := (uint32(r * 255) & 0xFF) << 16
+			gColor := (uint32(g * 255) & 0xFF) << 8
+			bColor := uint32(b * 255) & 0xFF
+
+			color := rColor | gColor | bColor
+
+			fmt.Printf("COLOR: %x\n", color)
+		} else {
+			fmt.Printf(" Poller died! red %v green %v blue %v\n",
+				rok, gok, bok)
+		}
 	}
-	fmt.Printf("mobile value: %v\n", mvalue)
-	nmvalue, err := poll(config.BlueQuery.Event, blueClient, config.BlueQuery.Where)
-	if err != nil {
-		panic("Bad response (or parse error) from Mixpanel")
-	}
-	fmt.Printf("non-mobile value: %v\n", nmvalue)
-
-	fmt.Printf("%v, %v, %v\n",
-		qvalue, mvalue, nmvalue)
-	fmt.Printf("%x, %x, %x\n",
-		(uint32(qvalue * 255) & 0xFF) << 16,
-		(uint32(mvalue * 255) & 0xFF) << 8,
-		uint32(nmvalue * 255) & 0xFF)
-	qColor := (uint32(qvalue * 255) & 0xFF) << 16
-	mColor := (uint32(mvalue * 255) & 0xFF) << 8
-	nmColor := uint32(nmvalue * 255) & 0xFF
-
-	color := qColor | mColor | nmColor
-
-	fmt.Printf("COLOR: %x\n", color)
-	// select {}
 }

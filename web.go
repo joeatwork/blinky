@@ -48,7 +48,7 @@ func (handler *blinkMHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	return
 }
 
-func Run(servicePort string, colorBlinkM chan<- uint32) {
+func RunWebService(servicePort string, colorBlinkM chan<- uint32) {
 	handler := &blinkMHandler{blinkM: colorBlinkM}
 	fmt.Printf("Starting service at %s\n", servicePort)
 	http.Handle("/", handler)

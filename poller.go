@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"sort"
 	"time"
 )
@@ -30,7 +31,7 @@ func (self sampleSlice) Swap(i, j int) {
 	self[j] = tmp
 }
 
-func poll(event string, client *ReportClient, where string) (float64, error) {
+func poll(event, where string, client *ReportClient) (float64, error) {
 	now := time.Now()
 	lastHourAdjustment := 60.0 / float64(now.Minute()) // Typically > 1
 	yesterday := now.Add(time.Duration(-time.Hour * 36))
@@ -130,4 +131,34 @@ func poll(event string, client *ReportClient, where string) (float64, error) {
 	}
 
 	return scaledSample, nil
+}
+
+func RunPollingService(pollingRate time.Duration, event, where string, client *ReportClient) (value chan float64, kill chan bool) {
+	// Closes the channel on error
+	value = make(chan float64)
+	kill = make(chan bool, 1)
+	die := false
+	var err *error = nil
+	go func () {
+		time.Sleep(time.Second * time.Duration(rand.Intn(60)))
+		for ! die && err == nil {
+			val, err := poll(event, where, client)
+			if err != nil {
+				fmt.Printf("ERROR IN POLLER")
+				fmt.Printf("  %v, %v, %v", event, where, client)
+				fmt.Printf(err.Error())
+			} else {
+				value <- val
+				time.Sleep(pollingRate)
+				select {
+				case die = <- kill:
+				default:
+				}
+			}
+		}
+		fmt.Printf("Poller exiting")
+		close(value)
+	}()
+
+	return
 }

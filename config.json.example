@@ -1,5 +1,6 @@
 {
     "ServicePort": ":8080",
+    "PollingRateSeconds": 30,
     "Device": {
 	"Device": "1",
 	"DeviceAddress": "0x09"
