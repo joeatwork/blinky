@@ -42,14 +42,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	// BlinkM
 	var colorBlinkM chan<- uint32
 	var killBlinkM chan<- bool
 	colorBlinkM, killBlinkM = serveBlinkM(config.Device)
+	fmt.Printf("BLINKM CHANNEL WHEN WE GET A CHIP THAT WORKS: %v\n", colorBlinkM)
 	defer func() {
 		killBlinkM <- true
 	}()
-	go RunWebService(config.ServicePort, colorBlinkM)
 
+	colorWebServer := make(chan uint32)
+	go RunWebService(config.ServicePort, colorWebServer)
+
+	// Polling Mixpanel
 	redClient := InitClient(config.RedQuery.Token, config.RedQuery.Secret)
 	greenClient := InitClient(config.GreenQuery.Token, config.GreenQuery.Secret)
 	blueClient := InitClient(config.BlueQuery.Token, config.BlueQuery.Secret)
@@ -85,6 +90,8 @@ func main() {
 	defer func() {
 		blueKill <- true
 	}()
+
+	// Messages - Poll to BlinkM
 	rok := true
 	gok := true
 	bok := true
@@ -106,6 +113,8 @@ func main() {
 			color := rColor | gColor | bColor
 
 			fmt.Printf("COLOR: %x\n", color)
+			colorWebServer <- color
+			fmt.Printf("WROTE COLOR\n")
 		} else {
 			fmt.Printf(" Poller died! red %v green %v blue %v\n",
 				rok, gok, bok)

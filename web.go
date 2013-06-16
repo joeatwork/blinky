@@ -1,59 +1,94 @@
 package main
 
-import (
+import (	
 	"fmt"
 	"net/http"
+	"os"
+	"sync"
+	"text/template"
+	"time"
 )
 
 const (
 	colorForm = `<html>
+<head>
+    <style>
+    .sample_demo {
+        width: 300px;
+        height: 30px;
+    }
+    </style>
+</head>
 <body>
-<form method="POST">
-    <div>r: <input type="text" name="r"></div>
-    <div>g: <input type="text" name="g"></div>
-    <div>b: <input type="text" name="b"></div>
-    <div><input type="submit"></div>
-</form>
+    <h1>YO DAWG HERE YOU ARE</h1>
+    {{ range .Samples }}
+    <div style="background-color: #{{ printf "%06x" .Color }};"
+         class="sample_demo"
+         >{{ .Time }}</div>
+    {{ end }}
 </body>
 </html>
 `
 )
 
-type blinkMHandler struct {
-	blinkM chan<- uint32
+type sample struct {
+	Color uint32
+	Time time.Time
 }
 
-func (handler *blinkMHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	rs := r.FormValue("r")
-	gs := r.FormValue("g")
-	bs := r.FormValue("b")
+type service struct {
+	Samples []sample
+	Template *template.Template
+	sync.RWMutex
+}
 
-	if rs == "" || gs == "" || bs == "" {
-		h := w.Header()
-		h.Set("Content-Type", "text/html")
-		w.WriteHeader(200)
-		fmt.Fprintf(w, colorForm)
-		return
-	}
+func (service *service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h := w.Header()
+	h.Set("Content-Type", "text/html")
+	w.WriteHeader(200)
 
-	color, err := parseColor(rs, gs, bs)
+	service.RLock()
+	service.Template.Execute(w, service)
+	service.RUnlock()
+}
+
+func RunWebService(servicePort string, colors <-chan uint32) {
+	samples := make([]sample, 50)
+	t, err := template.New("Samples").Parse(colorForm)
 	if err != nil {
-		w.WriteHeader(400)
-		fmt.Fprintf(w, "Can't understand r,g,b as integers/color")
-		return
+		fmt.Printf("Can't interpret template: %s\n", err.Error())
+		os.Exit(1)
 	}
-
-	fmt.Fprintf(w, "1")
-	handler.blinkM <- color
-	return
-}
-
-func RunWebService(servicePort string, colorBlinkM chan<- uint32) {
-	handler := &blinkMHandler{blinkM: colorBlinkM}
+	var mutex sync.RWMutex
+	service := &service{ samples, t, mutex }
 	fmt.Printf("Starting service at %s\n", servicePort)
-	http.Handle("/", handler)
-	err := http.ListenAndServe(servicePort, nil)
-	if err != nil {
-		fmt.Printf("Couldn't serve: %s\n", err.Error())
-	}
+	http.Handle("/", service)
+
+	go func() {
+		open := true
+		var color uint32 = 0
+		var index = 0
+		for open {
+			fmt.Printf("Web Server Waiting for Color\n")
+			color, open = <-colors
+			fmt.Printf("COLOR %60x OPEN %v\n", color, open)
+			if open {
+				now := time.Now()
+				service.Lock()
+				service.Samples[index] = sample{ color, now }
+				service.Unlock()
+				index = index + 1
+				if index >= len(service.Samples) {
+					index = 0
+				}
+			}
+		}
+	}()
+
+	go func() {
+		err := http.ListenAndServe(servicePort, nil)
+		if err != nil {
+			fmt.Printf("Couldn't serve: %s\n", err.Error())
+		}
+	}()
 }
