@@ -20,8 +20,7 @@ const (
     </style>
 </head>
 <body>
-    <h1>YO DAWG HERE YOU ARE</h1>
-    {{ range .Samples }}
+    {{ range .Moments }}
     <div style="background-color: #{{ printf "%06x" .Color }};"
          class="sample_demo"
          >{{ .Time }}</div>
@@ -31,13 +30,13 @@ const (
 `
 )
 
-type sample struct {
+type colorMoment struct {
 	Color uint32
 	Time time.Time
 }
 
 type service struct {
-	Samples []sample
+	Moments []colorMoment
 	Template *template.Template
 	sync.RWMutex
 }
@@ -53,8 +52,8 @@ func (service *service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func RunWebService(servicePort string, colors <-chan uint32) {
-	samples := make([]sample, 50)
-	t, err := template.New("Samples").Parse(colorForm)
+	samples := make([]colorMoment, 50)
+	t, err := template.New("Moments").Parse(colorForm)
 	if err != nil {
 		fmt.Printf("Can't interpret template: %s\n", err.Error())
 		os.Exit(1)
@@ -69,16 +68,14 @@ func RunWebService(servicePort string, colors <-chan uint32) {
 		var color uint32 = 0
 		var index = 0
 		for open {
-			fmt.Printf("Web Server Waiting for Color\n")
 			color, open = <-colors
-			fmt.Printf("COLOR %60x OPEN %v\n", color, open)
 			if open {
 				now := time.Now()
 				service.Lock()
-				service.Samples[index] = sample{ color, now }
+				service.Moments[index] = colorMoment{ color, now }
 				service.Unlock()
 				index = index + 1
-				if index >= len(service.Samples) {
+				if index >= len(service.Moments) {
 					index = 0
 				}
 			}

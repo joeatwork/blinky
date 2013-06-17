@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
+	"math/rand"
 	"time"
 )
 
-func serveBlinkM(device Device) (colors chan uint32, kill chan bool) { // TODO move
+func serveBlinkM(device Device) (colors chan uint32, kill chan bool) {
 	colors = make(chan uint32)
 	kill = make(chan bool)
 	go func () {
@@ -26,9 +27,41 @@ func serveBlinkM(device Device) (colors chan uint32, kill chan bool) { // TODO m
 	return
 }
 
+func servePollColor(pollingRate time.Duration, event, where string, client *ReportClient) (value chan float64, kill chan bool) {
+	// Closes the channel on error
+	value = make(chan float64)
+	kill = make(chan bool, 1)
+	die := false
+	var err *error = nil
+	go func () {
+		time.Sleep(time.Second * time.Duration(rand.Intn(60)))
+		for ! die && err == nil {
+			samples, err := poll(event, where, client)
+			if err != nil {
+				fmt.Printf("ERROR IN POLLER")
+				fmt.Printf("  %v, %v, %v", event, where, client)
+				fmt.Printf(err.Error())
+			} else {
+				value <- colorForCurrentSample(samples)
+				time.Sleep(pollingRate)
+				select {
+				case die = <- kill:
+				default:
+				}
+			}
+		}
+		fmt.Printf("Poller exiting")
+		close(value)
+	}()
+
+	return
+}
+
+
 func main() {
 	fmt.Printf("TODO:\n")
-	fmt.Printf("   REPORT COLORS TO WEB SERVER TO PREVIEW VARIATIONS OVER TIME\n")
+	fmt.Printf("   Handle query failures in poller without panics\n")
+	fmt.Printf("   Collect longer term color history for comparison\n")
 	fmt.Printf("   GET A NEW RASPBERRY PI BOARD WITH WORKING I2C\n")
 
 	if len(os.Args) != 2 {
@@ -63,7 +96,7 @@ func main() {
 		fmt.Printf("Polling time must be 30 seconds or more.")
 		os.Exit(1)
 	}
-	redVal, redKill := RunPollingService(
+	redVal, redKill := servePollColor(
 		pollTime,
 		config.RedQuery.Event,
 		config.RedQuery.Where,
@@ -72,7 +105,7 @@ func main() {
 	defer func() {
 		redKill <- true
 	}()
-	greenVal, greenKill := RunPollingService(
+	greenVal, greenKill := servePollColor(
 		pollTime,
 		config.GreenQuery.Event,
 		config.GreenQuery.Where,
@@ -81,7 +114,7 @@ func main() {
 	defer func() {
 		greenKill <- true
 	}()
-	blueVal, blueKill := RunPollingService(
+	blueVal, blueKill := servePollColor(
 		pollTime,
 		config.BlueQuery.Event,
 		config.BlueQuery.Where,
@@ -97,7 +130,6 @@ func main() {
 	bok := true
 	var r, g, b float64
 	for rok && gok && bok {
-		fmt.Printf("Waiting for pollers...\n")
 		select {
 		case r, rok = <- blueVal:
 		case g, gok = <- greenVal:
@@ -105,16 +137,11 @@ func main() {
 		}
 
 		if rok && gok && bok {
-			fmt.Printf(" %v, %v, %v\n", r, g, b)
 			rColor := (uint32(r * 255) & 0xFF) << 16
 			gColor := (uint32(g * 255) & 0xFF) << 8
 			bColor := uint32(b * 255) & 0xFF
-
 			color := rColor | gColor | bColor
-
-			fmt.Printf("COLOR: %x\n", color)
 			colorWebServer <- color
-			fmt.Printf("WROTE COLOR\n")
 		} else {
 			fmt.Printf(" Poller died! red %v green %v blue %v\n",
 				rok, gok, bok)
