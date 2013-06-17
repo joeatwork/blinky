@@ -34,7 +34,7 @@ func (self sampleSlice) Swap(i, j int) {
 func poll(event, where string, client *ReportClient) (float64, error) {
 	now := time.Now()
 	lastHourAdjustment := 60.0 / float64(now.Minute()) // Typically > 1
-	yesterday := now.Add(time.Duration(-time.Hour * 36))
+	yesterday := now.Add(time.Duration(-time.Hour * 48))
 	todayString := now.Format("2006-01-02")
 	yesterdayString := yesterday.Format("2006-01-02")
 
