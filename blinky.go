@@ -136,6 +136,11 @@ func main() {
 		case b, bok = <- redVal:
 		}
 
+		// We stretch the color scale a bit, for DRAMA
+		r = r * r
+		g = g * g
+		b = b * b
+
 		if rok && gok && bok {
 			rColor := (uint32(r * 255) & 0xFF) << 16
 			gColor := (uint32(g * 255) & 0xFF) << 8
