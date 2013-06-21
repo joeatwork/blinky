@@ -63,6 +63,7 @@ func servePollColor(pollingRate time.Duration, event, where string, client *Repo
 func main() {
 	fmt.Printf("TODO:\n")
 	fmt.Printf("   Collect longer term color history for comparison\n")
+	fmt.Printf("   Slower fade on color changes\n")
 
 	if len(os.Args) != 2 {
 		fmt.Printf("Usage: %s config_path\n", os.Args[0])

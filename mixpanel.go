@@ -47,18 +47,21 @@ func (self *ReportClient) Request(path string, params map[string] string) (inter
 	url := fmt.Sprintf("%s/%s/%s/?%s", ENDPOINT, VERSION, path, query.Encode())
 	resp, urlerr := http.Get(url)
 	if urlerr != nil {
-		panic(fmt.Sprintf("Can't load URL %s", url))
+		error = urlerr
+		return
 	}
 
 	defer resp.Body.Close()
 	body, httperr := ioutil.ReadAll(resp.Body)
 	if httperr != nil {
-		panic(fmt.Sprintf("HTTP ERROR %s", httperr))
+		error = httperr
+		return
 	}
 	var ret interface{}
 	jsonerr := json.Unmarshal(body, &ret)
 	if jsonerr != nil {
-		panic(fmt.Sprintf("JSON ERROR %s", jsonerr))
+		error = jsonerr
+		return
 	}
 	return ret, nil
 }
