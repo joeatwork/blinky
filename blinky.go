@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"math"
 	"math/rand"
 	"time"
 )
@@ -32,22 +33,23 @@ func servePollColor(pollingRate time.Duration, event, where string, client *Repo
 	value = make(chan float64)
 	kill = make(chan bool, 1)
 	die := false
-	var err *error = nil
 	go func () {
 		time.Sleep(time.Second * time.Duration(rand.Intn(60)))
-		for ! die && err == nil {
+		for ! die {
 			samples, err := poll(event, where, client)
 			if err != nil {
 				fmt.Printf("ERROR IN POLLER")
 				fmt.Printf("  %v, %v, %v", event, where, client)
 				fmt.Printf(err.Error())
+				value <- 0
 			} else {
 				value <- colorForCurrentSample(samples)
-				time.Sleep(pollingRate)
-				select {
-				case die = <- kill:
-				default:
-				}
+			}
+			
+			time.Sleep(pollingRate)
+			select {
+			case die = <- kill:
+			default:
 			}
 		}
 		fmt.Printf("Poller exiting")
@@ -60,9 +62,7 @@ func servePollColor(pollingRate time.Duration, event, where string, client *Repo
 
 func main() {
 	fmt.Printf("TODO:\n")
-	fmt.Printf("   Handle query failures in poller without panics\n")
 	fmt.Printf("   Collect longer term color history for comparison\n")
-	fmt.Printf("   GET A NEW RASPBERRY PI BOARD WITH WORKING I2C\n")
 
 	if len(os.Args) != 2 {
 		fmt.Printf("Usage: %s config_path\n", os.Args[0])
@@ -79,7 +79,6 @@ func main() {
 	var colorBlinkM chan<- uint32
 	var killBlinkM chan<- bool
 	colorBlinkM, killBlinkM = serveBlinkM(config.Device)
-	fmt.Printf("BLINKM CHANNEL WHEN WE GET A CHIP THAT WORKS: %v\n", colorBlinkM)
 	defer func() {
 		killBlinkM <- true
 	}()
@@ -137,9 +136,9 @@ func main() {
 		}
 
 		// We stretch the color scale a bit, for DRAMA
-		r = r * r
-		g = g * g
-		b = b * b
+		r = math.Pow(r, 1.2)
+		g = math.Pow(g, 1.2)
+		b = math.Pow(b, 1.2)
 
 		if rok && gok && bok {
 			rColor := (uint32(r * 255) & 0xFF) << 16
@@ -147,6 +146,7 @@ func main() {
 			bColor := uint32(b * 255) & 0xFF
 			color := rColor | gColor | bColor
 			colorWebServer <- color
+			colorBlinkM <- color
 		} else {
 			fmt.Printf(" Poller died! red %v green %v blue %v\n",
 				rok, gok, bok)
