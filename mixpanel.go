@@ -30,7 +30,7 @@ func InitClient(apiKey, apiSecret string) *ReportClient {
 	}
 }
 
-func (self *ReportClient) Request(path string, params map[string] string) (interface{}, error) {
+func (self *ReportClient) Request(path string, params map[string] string) (ret interface{}, err error) {
 	args := make(map[string] string, len(params) + 3)
 	for k,v := range params {
 		args[k] = v
@@ -47,20 +47,19 @@ func (self *ReportClient) Request(path string, params map[string] string) (inter
 	url := fmt.Sprintf("%s/%s/%s/?%s", ENDPOINT, VERSION, path, query.Encode())
 	resp, urlerr := http.Get(url)
 	if urlerr != nil {
-		error = urlerr
+		err = urlerr
 		return
 	}
 
 	defer resp.Body.Close()
 	body, httperr := ioutil.ReadAll(resp.Body)
 	if httperr != nil {
-		error = httperr
+		err = httperr
 		return
 	}
-	var ret interface{}
 	jsonerr := json.Unmarshal(body, &ret)
 	if jsonerr != nil {
-		error = jsonerr
+		err = jsonerr
 		return
 	}
 	return ret, nil
