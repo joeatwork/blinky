@@ -1,0 +1,8 @@
+#! /bin/bash
+
+CONFIG=/home/pi/Desktop/blinky/config.json
+LOG=/var/log/blinky/blinky.log
+PIDFILE=/var/run/blinky/blinky.pid
+
+/home/pi/Desktop/blinky/blinky $CONFIG >> $LOG 2>&1 &
+echo $! > $PIDFILE

@@ -40,7 +40,7 @@ func servePollColor(pollingRate time.Duration, event, where string, client *Repo
 			if err != nil {
 				fmt.Printf("ERROR IN POLLER")
 				fmt.Printf("  %v, %v, %v", event, where, client)
-				fmt.Printf(err.Error())
+				fmt.Println(err.Error())
 				value <- 0
 			} else {
 				value <- colorForCurrentSample(samples)
@@ -63,7 +63,7 @@ func servePollColor(pollingRate time.Duration, event, where string, client *Repo
 func main() {
 	fmt.Printf("TODO:\n")
 	fmt.Printf("   Collect longer term color history for comparison\n")
-	fmt.Printf("   Slower fade on color changes\n")
+	fmt.Printf("   Smooth out artifacts near the top of the hour\n")
 
 	if len(os.Args) != 2 {
 		fmt.Printf("Usage: %s config_path\n", os.Args[0])
@@ -75,6 +75,8 @@ func main() {
 		fmt.Printf("Can't read config file %s\n", os.Args[1])
 		os.Exit(1)
 	}
+
+	runBlinkmScript(config.Device)
 
 	// BlinkM
 	var colorBlinkM chan<- uint32
