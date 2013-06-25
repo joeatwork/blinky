@@ -17,14 +17,27 @@ const (
         width: 300px;
         height: 30px;
     }
+
+    .sample_bar {
+        height: 5;
+        background-color: black;
+    }
     </style>
 </head>
 <body>
-    {{ range .Moments }}
-    <div style="background-color: #{{ printf "%06x" .Color }};"
-         class="sample_demo"
-         >{{ .Time }}</div>
-    {{ end }}
+    <div style="width: 300px;">
+        {{ range .Moments }}
+        <div style="background-color: #{{ printf "%06x" .Color }};"
+             class="sample_demo"
+             >{{ .Time }}</div>
+        <div style="width: {{ .RPercent }}%; background-color: red;"
+             class="sample_bar"></div>
+        <div style="width: {{ .GPercent }}%; background-color: green;"
+             class="sample_bar"></div>
+        <div style="width: {{ .BPercent }}%; background-color: blue;"
+             class="sample_bar"></div>
+        {{ end }}
+    </div><!-- container -->
 </body>
 </html>
 `
@@ -32,6 +45,9 @@ const (
 
 type colorMoment struct {
 	Color uint32
+	RPercent uint32
+	GPercent uint32
+	BPercent uint32
 	Time time.Time
 }
 
@@ -49,6 +65,13 @@ func (service *service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	service.RLock()
 	service.Template.Execute(w, service)
 	service.RUnlock()
+}
+
+func colorPercents(color uint32) (r uint32, g uint32, b uint32) {
+	r = (((color >> 16) & 0xFF) * 100) / 256
+	g = (((color >> 8) & 0xFF) * 100) / 256
+	b = ((color & 0xFF) * 100) / 256
+	return
 }
 
 func RunWebService(servicePort string, colors <-chan uint32) {
@@ -70,9 +93,16 @@ func RunWebService(servicePort string, colors <-chan uint32) {
 		for open {
 			color, open = <-colors
 			if open {
+				rPercent, gPercent, bPercent := colorPercents(color)
 				now := time.Now()
 				service.Lock()
-				service.Moments[index] = colorMoment{ color, now }
+				service.Moments[index] = colorMoment{
+					color,
+					rPercent,
+					gPercent,
+					bPercent,
+					now,
+				}
 				service.Unlock()
 				index = index + 1
 				if index >= len(service.Moments) {
