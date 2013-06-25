@@ -11,7 +11,7 @@ func colorForCurrentSample(samples []Sample) float64 {
 	var previousSample float64 = 0.0
 	var currentSample float64 = 0.0
 	for _, sample := range samples {
-		if ! math.IsNaN(sample.datum) {
+		if !math.IsNaN(sample.datum) {
 			if sample.datum > 0.0 &&
 				currentSample > 0.0 &&
 				minSampleVal > currentSample {
@@ -30,7 +30,7 @@ func colorForCurrentSample(samples []Sample) float64 {
 
 	minutes := float64(time.Now().Minute())
 	var scaledSample float64
-	if (minutes < 2) {
+	if minutes < 2 {
 		// For the first minute, use the last value
 		// instead of introducing a lot of artificial
 		// detail.

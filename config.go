@@ -7,25 +7,25 @@ import (
 )
 
 type Query struct {
-	Name string `json:"Name"`
-	Token string `json:"Token"`
+	Name   string `json:"Name"`
+	Token  string `json:"Token"`
 	Secret string `json:"Secret"`
-	Event string `json:"Event"`
-	Where string `json:"Where,omitempty"`
+	Event  string `json:"Event"`
+	Where  string `json:"Where,omitempty"`
 }
 
 type Device struct {
-	Device string `json:"Device"`
+	Device        string `json:"Device"`
 	DeviceAddress string `json:"DeviceAddress"`
 }
 
 type Configuration struct {
-	ServicePort string `json:"ServicePort"`
+	ServicePort        string        `json:"ServicePort"`
 	PollingRateSeconds time.Duration `json:"PollingRateSeconds"`
-	Device Device `json:"Device"`
-	RedQuery Query `json:RedQuery`
-	GreenQuery Query `json:RedQuery`
-	BlueQuery Query `json:RedQuery`
+	Device             Device        `json:"Device"`
+	RedQuery           Query         `json:RedQuery`
+	GreenQuery         Query         `json:RedQuery`
+	BlueQuery          Query         `json:RedQuery`
 }
 
 func readConfig(path string) (config Configuration, err error) {

@@ -8,7 +8,7 @@ import (
 )
 
 type Sample struct {
-	date time.Time
+	date  time.Time
 	datum float64 // Might be NaN
 }
 
@@ -43,12 +43,12 @@ func poll(event, where string, client *ReportClient) (samples []Sample, err erro
 	todayString := now.Format("2006-01-02")
 	agoString := ago.Format("2006-01-02")
 
-	params := map[string] string {
-		"event": event,
-		"type": "general",
+	params := map[string]string{
+		"event":     event,
+		"type":      "general",
 		"from_date": agoString,
-		"to_date": todayString,
-		"unit": "hour",
+		"to_date":   todayString,
+		"unit":      "hour",
 	}
 	if where != "" {
 		params["where"] = where
@@ -58,21 +58,21 @@ func poll(event, where string, client *ReportClient) (samples []Sample, err erro
 	if err != nil {
 		return
 	}
-	response := response_i.(map[string] interface{})
+	response := response_i.(map[string]interface{})
 	data_i, ok := response["data"]
-	if ! ok {
+	if !ok {
 		err = PollError("Can't find {data:}")
 		return
 	}
-	data := data_i.(map[string] interface{})
+	data := data_i.(map[string]interface{})
 	values_i, ok := data["values"]
-	if ! ok {
+	if !ok {
 		err = PollError("Can't find {data:{values:}}")
 		return
 	}
-	values := values_i.(map[string] interface{})
+	values := values_i.(map[string]interface{})
 	segment_i := values[event]
-	segment := segment_i.(map[string] interface{})
+	segment := segment_i.(map[string]interface{})
 	samples = make([]Sample, len(segment))
 	i := 0
 	for datestring, datum_i := range segment {
@@ -93,7 +93,7 @@ func poll(event, where string, client *ReportClient) (samples []Sample, err erro
 			datum = datum_i.(float64)
 		}
 		samples[i] = Sample{
-			date: date,
+			date:  date,
 			datum: datum,
 		}
 		i++

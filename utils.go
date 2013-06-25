@@ -23,8 +23,8 @@ func parseColor(rs, gs, bs string) (color uint32, err error) {
 
 	color64 :=
 		((r & 0xFF) << 16) |
-		((g & 0xFF) << 8) |
-		(b & 0xFF);
+			((g & 0xFF) << 8) |
+			(b & 0xFF)
 
 	color = uint32(color64)
 	return

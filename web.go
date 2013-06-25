@@ -1,6 +1,6 @@
 package main
 
-import (	
+import (
 	"fmt"
 	"net/http"
 	"os"
@@ -44,15 +44,15 @@ const (
 )
 
 type colorMoment struct {
-	Color uint32
+	Color    uint32
 	RPercent uint32
 	GPercent uint32
 	BPercent uint32
-	Time time.Time
+	Time     time.Time
 }
 
 type service struct {
-	Moments []colorMoment
+	Moments  []colorMoment
 	Template *template.Template
 	sync.RWMutex
 }
@@ -82,7 +82,7 @@ func RunWebService(servicePort string, colors <-chan uint32) {
 		os.Exit(1)
 	}
 	var mutex sync.RWMutex
-	service := &service{ samples, t, mutex }
+	service := &service{samples, t, mutex}
 	fmt.Printf("Starting service at %s\n", servicePort)
 	http.Handle("/", service)
 

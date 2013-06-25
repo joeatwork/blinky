@@ -5,9 +5,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"sort"
 	"time"
@@ -15,33 +15,33 @@ import (
 
 const (
 	ENDPOINT = "http://mixpanel.com/api"
-	VERSION = "2.0"
+	VERSION  = "2.0"
 )
 
 type ReportClient struct {
-	apiKey string
+	apiKey    string
 	apiSecret string
 }
 
 func InitClient(apiKey, apiSecret string) *ReportClient {
 	return &ReportClient{
-		apiKey: apiKey,
+		apiKey:    apiKey,
 		apiSecret: apiSecret,
 	}
 }
 
-func (self *ReportClient) Request(path string, params map[string] string) (ret interface{}, err error) {
-	args := make(map[string] string, len(params) + 3)
-	for k,v := range params {
+func (self *ReportClient) Request(path string, params map[string]string) (ret interface{}, err error) {
+	args := make(map[string]string, len(params)+3)
+	for k, v := range params {
 		args[k] = v
 	}
 
 	args["api_key"] = self.apiKey
-	args["expire"] = fmt.Sprintf("%d", time.Now().Unix() + 600)
+	args["expire"] = fmt.Sprintf("%d", time.Now().Unix()+600)
 	args["sig"] = hashArgs(self.apiSecret, args)
 
 	query := url.Values{}
-	for k,v := range args {
+	for k, v := range args {
 		query.Add(k, v)
 	}
 	url := fmt.Sprintf("%s/%s/%s/?%s", ENDPOINT, VERSION, path, query.Encode())
@@ -65,16 +65,16 @@ func (self *ReportClient) Request(path string, params map[string] string) (ret i
 	return ret, nil
 }
 
-func hashArgs(secret string, args map[string] string) string {
+func hashArgs(secret string, args map[string]string) string {
 	var keys sort.StringSlice = make([]string, len(args))
 	i := 0
-	for k,_ := range args {
+	for k, _ := range args {
 		keys[i] = k
 		i++
 	}
 	keys.Sort()
 	md5 := md5.New()
-	for _,k := range keys {
+	for _, k := range keys {
 		v, _ := args[k]
 		io.WriteString(md5, k)
 		io.WriteString(md5, "=")

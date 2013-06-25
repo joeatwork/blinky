@@ -2,25 +2,25 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"math"
 	"math/rand"
+	"os"
 	"time"
 )
 
 func serveBlinkM(device Device) (colors chan uint32, kill chan bool) {
 	colors = make(chan uint32)
 	kill = make(chan bool)
-	go func () {
+	go func() {
 		die := false
 		color := uint32(0)
-		for ! die {
+		for !die {
 			time.Sleep(time.Second / 2)
 			select {
-			case color = <- colors:
+			case color = <-colors:
 				fmt.Printf("Color to %x\n", color)
 				setColor(device, color)
-			case die = <- kill:
+			case die = <-kill:
 				fmt.Printf("Blinkm qutting\n")
 			}
 		}
@@ -33,9 +33,9 @@ func servePollColor(pollingRate time.Duration, event, where string, client *Repo
 	value = make(chan float64)
 	kill = make(chan bool, 1)
 	die := false
-	go func () {
+	go func() {
 		time.Sleep(time.Second * time.Duration(rand.Intn(60)))
-		for ! die {
+		for !die {
 			samples, err := poll(event, where, client)
 			if err != nil {
 				fmt.Printf("ERROR IN POLLER")
@@ -45,10 +45,10 @@ func servePollColor(pollingRate time.Duration, event, where string, client *Repo
 			} else {
 				value <- colorForCurrentSample(samples)
 			}
-			
+
 			time.Sleep(pollingRate)
 			select {
-			case die = <- kill:
+			case die = <-kill:
 			default:
 			}
 		}
@@ -58,7 +58,6 @@ func servePollColor(pollingRate time.Duration, event, where string, client *Repo
 
 	return
 }
-
 
 func main() {
 	fmt.Printf("TODO:\n")
@@ -133,9 +132,9 @@ func main() {
 	var r, g, b float64
 	for rok && gok && bok {
 		select {
-		case r, rok = <- blueVal:
-		case g, gok = <- greenVal:
-		case b, bok = <- redVal:
+		case r, rok = <-blueVal:
+		case g, gok = <-greenVal:
+		case b, bok = <-redVal:
 		}
 
 		// We stretch the color scale a bit, for DRAMA
@@ -144,9 +143,9 @@ func main() {
 		b = math.Pow(b, 1.2)
 
 		if rok && gok && bok {
-			rColor := (uint32(r * 255) & 0xFF) << 16
-			gColor := (uint32(g * 255) & 0xFF) << 8
-			bColor := uint32(b * 255) & 0xFF
+			rColor := (uint32(r*255) & 0xFF) << 16
+			gColor := (uint32(g*255) & 0xFF) << 8
+			bColor := uint32(b*255) & 0xFF
 			color := rColor | gColor | bColor
 			colorWebServer <- color
 			colorBlinkM <- color
