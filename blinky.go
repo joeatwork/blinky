@@ -59,9 +59,18 @@ func servePollColor(pollingRate time.Duration, event, where string, client *Repo
 	return
 }
 
+func serveLog(logger *Logger) (ret chan LogSample) {
+	ret = make(chan LogSample, 10)
+	go func() {
+		for log := range ret {
+			logger.writeLog(log)
+		}
+	}()
+	return
+}
+
 func main() {
 	fmt.Printf("TODO:\n")
-	fmt.Printf("   Collect longer term color history for comparison\n")
 	fmt.Printf("   Smooth out artifacts near the top of the hour\n")
 
 	if len(os.Args) != 2 {
@@ -85,8 +94,11 @@ func main() {
 		killBlinkM <- true
 	}()
 
-	colorWebServer := make(chan uint32)
-	go RunWebService(config.ServicePort, colorWebServer)
+	// Logger
+	logger := initLog(config.ColorLog)
+	logChannel := serveLog(logger)
+
+	RunWebService(config.ServicePort, logger)
 
 	// Polling Mixpanel
 	redClient := InitClient(config.RedQuery.Token, config.RedQuery.Secret)
@@ -137,20 +149,26 @@ func main() {
 		case b, bok = <-redVal:
 		}
 
-		// We stretch the color scale a bit, for DRAMA
-		r = math.Pow(r, 1.2)
-		g = math.Pow(g, 1.2)
-		b = math.Pow(b, 1.2)
-
 		if rok && gok && bok {
-			rColor := (uint32(r*255) & 0xFF) << 16
-			gColor := (uint32(g*255) & 0xFF) << 8
-			bColor := uint32(b*255) & 0xFF
+			// We stretch the color scale a bit, for DRAMA
+			rDrama := math.Pow(r, 1.2)
+			gDrama := math.Pow(g, 1.2)
+			bDrama := math.Pow(b, 1.2)
+
+			rColor := (uint32(rDrama*255) & 0xFF) << 16
+			gColor := (uint32(gDrama*255) & 0xFF) << 8
+			bColor := uint32(bDrama*255) & 0xFF
 			color := rColor | gColor | bColor
-			colorWebServer <- color
 			colorBlinkM <- color
+
+			logChannel <- LogSample{
+				r, rDrama,
+				g, gDrama,
+				b, bDrama,
+				color, time.Now(),
+			}
 		} else {
-			fmt.Printf(" Poller died! red %v green %v blue %v\n",
+			fmt.Printf("Poller died! red %v green %v blue %v\n",
 				rok, gok, bok)
 		}
 	}

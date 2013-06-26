@@ -1,6 +1,7 @@
 {
     "ServicePort": ":8080",
     "PollingRateSeconds": 30,
+    "ColorLog": "PATH TO A LOG FILE",
     "Device": {
 	"Device": "1",
 	"DeviceAddress": "0x09"

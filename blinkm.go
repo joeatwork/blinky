@@ -14,7 +14,7 @@ func runBlinkmScript(device Device) {
 	}
 
 	// Run the SOS script 3 times from start
-	sosScript := exec.Command("i2cset", "-y", device.Device, device.DeviceAddress, "0x70", "0x12", "0x03", "0x00", "i")
+	sosScript := exec.Command("i2cset", "-y", device.Device, device.DeviceAddress, "0x70", "0x12", "0x01", "0x00", "i")
 	soserr := sosScript.Run()
 	if soserr != nil {
 		fmt.Printf("OH NO! %s\n", soserr.Error())

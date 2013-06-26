@@ -25,7 +25,7 @@ case "$1" in
 	;;
     stop)
 	echo -n "Stopping blinky "
-	if start-stop-daemon --stop --quiet --oknodo --make-pidfile --pidfile $PIDFILE; then
+	if start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE; then
 	    log_end_msg 0 || true
 	else
 	    log_end_msg 1 || true
