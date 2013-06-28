@@ -39,7 +39,7 @@ func (self sampleSlice) Swap(i, j int) {
 func poll(event, where string, client *ReportClient) (samples []Sample, err error) {
 	err = nil
 	now := time.Now()
-	ago := now.Add(time.Duration(-time.Hour * 48))
+	ago := now.Add(time.Duration(-time.Hour * 24))
 	todayString := now.Format("2006-01-02")
 	agoString := ago.Format("2006-01-02")
 
