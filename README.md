@@ -2,8 +2,8 @@ Blinky
 ======
 
 This is the source code for driving a BlinkM
-based on Mixpanel queries. It's currently
-driving a lamp in the Mixpanel offices.
+based on Mixpanel queries. At one point it powered
+a lamp in the Mixpanel offices.
 
 It runs on Linux, and depends on the
 [I2CTools](http://www.lm-sensors.org/wiki/I2CTools)
