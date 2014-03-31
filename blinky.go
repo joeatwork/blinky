@@ -19,7 +19,6 @@ func serveBlinkM(device Device) (colors chan uint32, kill chan bool) {
 			time.Sleep(time.Second / 2)
 			select {
 			case color = <-colors:
-				fmt.Printf("Color to %x\n", color)
 				setColor(device, color)
 			case die = <-kill:
 				fmt.Printf("Blinkm qutting\n")
