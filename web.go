@@ -76,10 +76,8 @@ func RunWebService(servicePort string, logger *Logger) {
 	}
 
 	recentService := &service{t, logger.recent}
-	ancientService := &service{t, logger.ancient}
 	fmt.Printf("Starting service at %s\n", servicePort)
 	http.Handle("/", recentService)
-	http.Handle("/history", ancientService)
 
 	go func() {
 		err := http.ListenAndServe(servicePort, nil)

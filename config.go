@@ -22,7 +22,6 @@ type Device struct {
 type Configuration struct {
 	ServicePort        string        `json:"ServicePort"`
 	PollingRateSeconds time.Duration `json:"PollingRateSeconds"`
-	ColorLog           string        `json:"ColorLog"`
 	Device             Device        `json:"Device"`
 	RedQuery           Query         `json:RedQuery`
 	GreenQuery         Query         `json:RedQuery`

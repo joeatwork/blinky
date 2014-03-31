@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"flag"
 	"os"
 	"time"
 )
@@ -69,18 +70,27 @@ func serveLog(logger *Logger) (ret chan LogSample) {
 	return
 }
 
+var debugMode bool
+
+func init() {
+	flag.BoolVar(&debugMode, "verbose", false, "Print lots of stuff to stdout")
+}
+
 func main() {
+	flag.Parse()
+
+	fmt.Printf("Debug mode == %t\n", debugMode)
 	fmt.Printf("TODO:\n")
 	fmt.Printf("   Smooth out artifacts near the top of the hour\n")
 
-	if len(os.Args) != 2 {
+	if flag.NArg() != 1 {
 		fmt.Printf("Usage: %s config_path\n", os.Args[0])
 		os.Exit(1)
 	}
 
-	config, cerr := readConfig(os.Args[1])
+	config, cerr := readConfig(flag.Arg(0))
 	if cerr != nil {
-		fmt.Printf("Can't read config file %s\n", os.Args[1])
+		fmt.Printf("Can't read config file %s\n", flag.Arg(0))
 		os.Exit(1)
 	}
 
@@ -95,7 +105,7 @@ func main() {
 	}()
 
 	// Logger
-	logger := initLog(config.ColorLog)
+	logger := initLog(debugMode)
 	logChannel := serveLog(logger)
 
 	RunWebService(config.ServicePort, logger)
